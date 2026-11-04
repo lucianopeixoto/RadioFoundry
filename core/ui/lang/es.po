@@ -2749,6 +2749,10 @@ msgid "FM broadcast step"
 msgstr "Paso FM comercial"
 
 #: core/ui/ui_menus.c
+msgid "Extended receive"
+msgstr "Recepción extendida"
+
+#: core/ui/ui_menus.c
 msgid "Mic gain"
 msgstr "Ganancia mic"
 

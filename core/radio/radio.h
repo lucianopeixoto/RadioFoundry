@@ -68,6 +68,10 @@ typedef struct {
 	uint16_t backlight_off_s;	// off after, 0 = never
 	// DMR (CONFIG_DMR)
 	uint8_t reply_s;	// reply window after a call, 0 = off .. 30 s, RADIO_REPLY_CODEPLUG = the codeplug's hang times
+#if CONFIG_RX_EXTEND
+	bool rx_extend;	// extended receive: the VFO and channel receive may tune the board's rx_ext_bands past the
+				// band table (the user's setting, off by default; transmit stays refused there)
+#endif
 	// DMR repeater roaming (CONFIG_DMR_ROAMING; docs/spec/dmr-roaming.md). Which zones roam is kept apart (RREQ_ROAM)
 	int8_t roam_rssi_dbm;	// threshold: the site counts as weak below it, a candidate must reach it (-125 .. -60)
 	uint8_t roam_hyst_db;	// a candidate must beat the current site by this much (1 .. 30)

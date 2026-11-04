@@ -246,6 +246,11 @@ int32_t ui_svc_setting_get(uint8_t id)
 	case UI_SET_TALK_PERMIT:
 		radio_get_settings(&rs);
 		return rs.talk_permit;
+#if CONFIG_RX_EXTEND
+	case UI_SET_RX_EXTEND:
+		radio_get_settings(&rs);
+		return rs.rx_extend;
+#endif
 	case UI_SET_TFTP_WRITE:
 		settings_read(&st);
 		return (st.net_flags & SETTINGS_NET_TFTP_NO_WRITE) == 0;
@@ -334,6 +339,9 @@ bool ui_svc_setting_set(uint8_t id, int32_t value)
 	case UI_SET_BATTERY_SAVER:
 	case UI_SET_REPLY_S:
 	case UI_SET_TALK_PERMIT:
+#if CONFIG_RX_EXTEND
+	case UI_SET_RX_EXTEND:
+#endif
 #if CONFIG_SFR
 	case UI_SET_SFR_RX:
 #endif

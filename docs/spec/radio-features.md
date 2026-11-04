@@ -45,6 +45,7 @@ quick changes therefore never reads back a value from before its own last change
 | `rx_save_idle_s` | 10 | battery saving starts after this long without activity |
 | `battery_off_s` | 0 (never) | switch off after this long with the battery critical |
 | `backlight_dim_s`, `backlight_off_s` | 30, 120 | for the UI's backlight policy (`radio_backlight_pct`, 5.3) |
+| `rx_extend` | off | extended receive (CONFIG_RX_EXTEND): the VFO and channel receive may tune the board's `rx_ext_bands` past the band table (section 6.2; stored as `SETTINGS_RS_RX_EXTEND` in `rs_flags`) |
 
 TX time-out: one implementation for FM and DMR. A channel's codeplug `tot_s` wins; 0 there means the radio's
 `tot_s`. The value in effect is `tot_s` in the core view, and the DMR call stack gets the same value. Open-firmware
@@ -489,6 +490,17 @@ the network or the user sets it, the radio shows "no time", and records keep usi
 Checked, unchanged: the board clamps the power level, uses the calibration table's drive value for the band and level,
 and refuses a TX frequency outside the board's bands (`tx_deny=band`). Without a calibration the board either drives
 a low fixed value or refuses to transmit; the board's hardware page says which.
+
+### 6.2 Extended receive (CONFIG_RX_EXTEND)
+
+A board whose RF chip tunes past the radio's bands lists those ranges in `board_t.rx_ext_bands` (`hal/board.h`).
+With the user's **Settings > Talk & listen > Extended receive** on (off by default, `radio_settings_t.rx_extend`),
+the VFO and channel receive tune those ranges; transmit stays refused there (`tx_deny=band`), and a channel tuned
+there is receive-only. The setting is hidden on a radio without any extension range.
+
+Sensitivity, selectivity and spurs are not specified outside the radio's bands: the front end there is unmeasured.
+The row warns of this; a board's hardware page says which ranges it lists and what (if anything) was measured there.
+[feature-matrix.md](../feature-matrix.md) lists which radios build the switch.
 
 ### 6.1 Reference trim
 

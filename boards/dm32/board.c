@@ -27,6 +27,14 @@ static const band_t bands[] = {
 	{ 65000000, 108000000, false },		// the broadcast band, on the RDA5807M (airband-and-broadcast.md 4)
 #endif
 };
+#if CONFIG_RX_EXTEND
+// Receive-only past the band table (issue 360): the FD6818 tunes 16 MHz to over 740 MHz (hardware-dm32.md 8.3), but
+// the filters, the front end and the sensitivity above 480 MHz are unmeasured. Only with the user's "Extended
+// receive" setting on; transmit stays refused there
+static const band_t rx_ext_bands[] = {
+	{ 480000000, 520000000, false },
+};
+#endif
 
 // Power levels 0..8 of hardware-dm32.md 11.3 (level 9, the user value, isn't offered). Labels are nominal: the radio
 // is rated 5 W VHF / 4 W UHF at high power; check against a meter at the bring-up
@@ -67,6 +75,10 @@ const board_t board = {
 		(CONFIG_AM_RX ? CAP_AM_RX : 0) | (CONFIG_BCAST_FM ? CAP_BCAST_FM : 0),
 	.bands = bands,
 	.band_count = sizeof(bands) / sizeof(bands[0]),
+#if CONFIG_RX_EXTEND
+	.rx_ext_bands = rx_ext_bands,
+	.rx_ext_band_count = sizeof(rx_ext_bands) / sizeof(rx_ext_bands[0]),
+#endif
 	.power_count = sizeof(power_names) / sizeof(power_names[0]),
 	.power_names = power_names,
 	.power_default = 1,	// low

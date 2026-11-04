@@ -142,6 +142,9 @@
 #ifndef CONFIG_VFO_DMR
 #define CONFIG_VFO_DMR			(CONFIG_VFO && CONFIG_DMR)
 #endif
+#ifndef CONFIG_RX_EXTEND
+#define CONFIG_RX_EXTEND		1
+#endif
 #ifndef CONFIG_DIAG
 #define CONFIG_DIAG			1
 #endif

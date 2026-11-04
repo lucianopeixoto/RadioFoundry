@@ -4435,6 +4435,11 @@ static void clamp_settings(radio_settings_t *s)
 }
 
 // The radio core's settings as kept in the settings store (docs/spec/settings-store.md 3); the defaults if never set
+#if CONFIG_RX_EXTEND
+// What board_in_band() (hal/board.h) allows for receive: the user's extended-receive setting
+bool board_rx_extend = false;
+#endif
+
 static void settings_to_radio(const settings_t *st, radio_settings_t *s)
 {
 	radio_settings_default(s);
@@ -4472,6 +4477,10 @@ static void settings_to_radio(const settings_t *st, radio_settings_t *s)
 	s->scan_beep = (st->rs_flags & SETTINGS_RS_SCAN_BEEP) != 0;
 	s->key_beep = (st->rs_flags & SETTINGS_RS_KEY_BEEP) != 0;
 	s->talk_permit = (st->rs_flags & SETTINGS_RS_NO_TALK_PERMIT) == 0;
+#if CONFIG_RX_EXTEND
+	s->rx_extend = (st->rs_flags & SETTINGS_RS_RX_EXTEND) != 0;
+	board_rx_extend = s->rx_extend;
+#endif
 	s->scan_resume = st->rs_scan_resume;
 	s->scan_hold_s = st->rs_scan_hold_s;
 	s->scan_delay_ms = st->rs_scan_delay_ms;
@@ -4498,7 +4507,11 @@ static void radio_to_settings(const radio_settings_t *s, uint32_t now_ms)
 	st->rs_flags = (uint8_t)((s->roger_beep ? SETTINGS_RS_ROGER_BEEP : 0) | (s->tx_inhibit ? SETTINGS_RS_TX_INHIBIT : 0) |
 				 (s->scan_priority ? SETTINGS_RS_SCAN_PRIORITY : 0) |
 				 (s->scan_beep ? SETTINGS_RS_SCAN_BEEP : 0) | (s->key_beep ? SETTINGS_RS_KEY_BEEP : 0) |
-				 (s->talk_permit ? 0 : SETTINGS_RS_NO_TALK_PERMIT));
+				 (s->talk_permit ? 0 : SETTINGS_RS_NO_TALK_PERMIT)
+#if CONFIG_RX_EXTEND
+				 | (s->rx_extend ? SETTINGS_RS_RX_EXTEND : 0)
+#endif
+				 );
 	st->rs_scan_resume = s->scan_resume;
 	st->rs_scan_hold_s = s->scan_hold_s;
 	st->rs_scan_delay_ms = s->scan_delay_ms;
@@ -4537,6 +4550,9 @@ static void use_settings(radio_sm_t *sm, const radio_settings_t *s, uint32_t now
 #endif
 	sm->set = *s;
 	clamp_settings(&sm->set);
+#if CONFIG_RX_EXTEND
+	board_rx_extend = sm->set.rx_extend;	// board_in_band() reads it for every tune
+#endif
 	apply_tot(sm);
 #if CONFIG_DMR_ROAMING
 	roam_cfg_t rc;

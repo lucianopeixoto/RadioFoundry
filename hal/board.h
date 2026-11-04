@@ -51,6 +51,11 @@ typedef struct {
 	uint32_t caps;
 	const band_t *bands;
 	uint8_t band_count;
+	// Ranges the RF chip tunes but the radio is not rated for (the front end there is unmeasured). With the
+	// user's extended-receive setting on (CONFIG_RX_EXTEND), VFO and channel receive may tune here; transmit is
+	// never allowed in them (board_in_band with need_tx ignores them). NULL / 0 on a radio without any
+	const band_t *rx_ext_bands;
+	uint8_t rx_ext_band_count;
 	uint8_t power_count;
 	const char *const *power_names;	// short labels for the status line, power_count entries
 	uint8_t power_default;
@@ -112,6 +117,12 @@ static inline bool board_has_battery(void)
 	return (board.caps & CAP_NO_BATTERY) == 0;
 }
 
+#if defined(CONFIG_RX_EXTEND) && CONFIG_RX_EXTEND
+// The radio core sets this from the user's extended-receive setting (Settings > Talk & listen). While true,
+// board_in_band() allows the board's rx_ext_bands for receive; transmit stays refused there. Defined in core/radio.
+extern bool board_rx_extend;
+#endif
+
 // hz is in one of the radio's bands (board.bands), and one that may transmit when need_tx
 static inline bool board_in_band(uint32_t hz, bool need_tx)
 {
@@ -121,6 +132,16 @@ static inline bool board_in_band(uint32_t hz, bool need_tx)
 			return true;
 		}
 	}
+#if defined(CONFIG_RX_EXTEND) && CONFIG_RX_EXTEND
+	if (!need_tx && board_rx_extend) {
+		for (uint8_t i = 0; i < board.rx_ext_band_count; i++) {
+			const band_t *b = &board.rx_ext_bands[i];
+			if (hz >= b->lo_hz && hz <= b->hi_hz) {
+				return true;
+			}
+		}
+	}
+#endif
 	return false;
 }
 

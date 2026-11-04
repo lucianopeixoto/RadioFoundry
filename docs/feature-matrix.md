@@ -209,6 +209,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | `VFO` | ● | ● | ● | ● | ● | ● |
 | `VFO_FM` | ● | ● | ● | ● | ● | ● |
 | `VFO_DMR` | ● | ● | ● | ● | ● | ● |
+| `RX_EXTEND` | ● | ● | ● | ● | ● | ● |
 | `DIAG` | ● | ● | ● | ● | ● | ● |
 | `FONT_XL` | ● | ✕ | ✕ | ✕ | ✕ | ✕ |
 | `FONT_AA` | ● | ○ | ○ | ○ | ○ | ○ |

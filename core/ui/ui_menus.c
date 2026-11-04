@@ -4918,6 +4918,9 @@ static const set_item_t s_talk[] = {
 #if CONFIG_VFO && CONFIG_BCAST_FM
 	LIST(TRN("FM broadcast step"), "VFO tuning radio station 200 kHz odd", UI_SET_BCAST_STEP, v_bcast_step, n_bcast_step),
 #endif
+#if CONFIG_RX_EXTEND
+	TOGGLE(TRN("Extended receive"), "out of band past table", UI_SET_RX_EXTEND),
+#endif
 	NUMBER(TRN("Mic gain"), NULL, UI_SET_MIC_GAIN, 0, 10, 1, NULL),
 	TOGGLE(TRN("Mic AGC"), "automatic gain level", UI_SET_MIC_AGC),
 	TOGGLE(TRN("Mic noise reduction"), "noise suppression background", UI_SET_NOISE_REDUCTION),
@@ -5063,6 +5066,8 @@ static bool set_hidden(const set_item_t *s)
 		return !(feats() & UI_FEAT_BCAST);
 	if (s->type != ST_ACTION && s->id == UI_SET_REF_TRIM)
 		return !(feats() & UI_FEAT_REF_TRIM);	// only a radio whose board has the trim
+	if (s->type != ST_ACTION && s->id == UI_SET_RX_EXTEND)
+		return board.rx_ext_band_count == 0;	// only a radio whose chip tunes past its band table
 	return !board_has_battery() && s->type != ST_ACTION &&
 	       (s->id == UI_SET_BATTERY_SAVER || s->id == UI_SET_LOW_BATTERY);
 }

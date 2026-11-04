@@ -877,6 +877,13 @@ repeat of a call sat 90.2 ms after the original on every voice burst (72 of 72).
 Golay corrections and 4 were uncorrectable, where the direct copy was clean: the receiver takes bit errors while it
 switches per burst. As a user it reports both copies of a call (gotchas 14.15).
 
+### 8.10 Extended receive (unmeasured)
+
+The FD6818 tunes 16 MHz to over 740 MHz (8.3), so the board lists 480-520 MHz in `rx_ext_bands`
+(`boards/dm32/board.c`): with **Settings > Talk & listen > Extended receive** on, the VFO and channel receive tune
+there; transmit stays refused. The filters, the front end and the sensitivity above 480 MHz are unmeasured: no
+SINAD or RSSI-against-known-level measurement exists yet. Until one does, treat reception there as best-effort.
+
 ## 9. Audio path
 
 | Element | Detail |

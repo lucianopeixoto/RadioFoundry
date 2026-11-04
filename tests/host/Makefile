@@ -278,7 +278,7 @@ batteryTest: batteryTest.c $(ROOT)/drivers/power/battery/battery.h
 # The band check of hal/board.h, which the core and the radios share
 TESTS   += boardBandTest
 boardBandTest: boardBandTest.c $(ROOT)/hal/board.h
-	$(CC) $(CFLAGS) -I$(ROOT)/hal -Wshadow -o $@ boardBandTest.c
+	$(CC) $(CFLAGS) -I$(ROOT)/hal -Wshadow -DCONFIG_RX_EXTEND=1 -o $@ boardBandTest.c
 
 run: run-core
 run-core: radioCoreTest radioCoreTestNoVfoDmr radioFeaturesTest radioFeaturesTestNoDual roamTest radioListenBandsTest inputTest aprsRadioTest quadratureTest serialmicTest miclevelTest \
