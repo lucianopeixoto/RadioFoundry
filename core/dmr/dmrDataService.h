@@ -31,6 +31,8 @@ typedef struct
 	bool     group;
 	uint8_t  seq;							// TMS sequence number, to spot a sender's retries
 	bool     unread;						// not shown on the radio yet
+	bool     crcOk;							// the packet's CRC passed (false: accepted with the CRC check off,
+											// the text may be corrupted)
 	uint8_t  format;						// dmr_sms_format_t it came in (a reply goes the same way)
 	char     text[sizeof(((dmrDataTMS_t *)0)->text)];
 } dmrDataMessage_t;
@@ -62,6 +64,8 @@ typedef struct
 	bool     radioCheckReply;				// answer radio checks
 	bool     callAlertAck;					// acknowledge call alerts (they ring either way)
 	bool     lrrpReply;						// answer LRRP location requests
+	bool     crcCheck;						// check the CRC of received data (headers, packets); off:
+											// data with a bad CRC is accepted and marked, never acknowledged
 	bool     hasGps;						// the radio has a position source (else LRRP says "no fix")
 	uint8_t  smsFormat;						// dmr_sms_format_t of sms_send(..., DMR_SMS_FORMAT_DEFAULT): ETSI_IP, ETSI or TMS
 	bool     radioCheckEtsi;				// our radio checks in the ETSI form (FID 0x00), else Motorola's (FID 0x10)

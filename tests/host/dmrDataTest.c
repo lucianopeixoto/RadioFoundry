@@ -125,6 +125,42 @@ static void testTMSRoundTrip(bool group, int preambles)
 	dumpBursts(group ? "tms-group" : "tms-private", bursts, n);
 }
 
+// The CRC check off (dmrDataSetCrcCheck): bad data is delivered, marked crcOk false, not dropped
+static void testCrcCheckOff(void)
+{
+	dmrBurst_t bursts[DMR_DATA_MAX_BURSTS];
+	const char *text = "Hello";
+	int n = dmrDataBuildTMS(false, 235, 3141592, text, 5, false, DT_RATE_12_DATA, 0, bursts, DMR_DATA_MAX_BURSTS);
+
+	CHECK(n > 1);
+	CHECK(bursts[0].dataType == DT_DATA_HEADER);
+
+	// Check on (the default): a corrupted block fails the packet CRC
+	dmrDataSetCrcCheck(true);
+	bursts[n - 2].payload[3] ^= 0x10;
+	CHECK(feed(bursts, n) == DMR_DATA_RX_ERROR);
+	bursts[n - 2].payload[3] ^= 0x10;
+
+	// Check off: the same corrupted block is delivered, marked
+	dmrDataSetCrcCheck(false);
+	bursts[n - 2].payload[3] ^= 0x10;
+	CHECK(feed(bursts, n) == DMR_DATA_RX_PACKET);
+	CHECK(!dmrDataRxPacket.crcOk);
+	bursts[n - 2].payload[3] ^= 0x10;
+
+	// Check off: a corrupted header is accepted, marked
+	bursts[0].payload[4] ^= 0x01;
+	CHECK(feed(bursts, n) == DMR_DATA_RX_PACKET);
+	CHECK(!dmrDataRxPacket.crcOk);
+	bursts[0].payload[4] ^= 0x01;
+
+	// A good packet with the check off is delivered unmarked
+	CHECK(feed(bursts, n) == DMR_DATA_RX_PACKET);
+	CHECK(dmrDataRxPacket.crcOk);
+
+	dmrDataSetCrcCheck(true);
+}
+
 static void testPadding(uint8_t blockType)
 {
 	// Every user data length from 1 to a full packet must round trip, which exercises all the pad octet counts
@@ -1113,6 +1149,7 @@ static void testFuzz(void)
 int main(void)
 {
 	testCRC32();
+	testCrcCheckOff();
 	testTMSRoundTrip(false, 0);
 	testTMSRoundTrip(true, 3);
 	testPadding(DT_RATE_12_DATA);

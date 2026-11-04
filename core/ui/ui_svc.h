@@ -142,6 +142,7 @@ typedef struct {
 	bool group;		// sent to a talkgroup
 	bool unread;
 	bool sent;		// one we sent
+	bool crcOk;		// the packet's CRC passed (false: received with the CRC check off, the text may be corrupted)
 	uint32_t age_ms;	// how long ago
 	char name[17];		// sender's name if known
 	char text[UI_MSG_TEXT_MAX + 1];
@@ -325,6 +326,7 @@ typedef enum {
 	UI_SET_DMR_ID,		// the radio's own DMR ID in the codeplug, 1..CODEPLUG_DMR_ID_MAX (a set is a codeplug write job)
 	UI_SET_REF_TRIM,	// reference oscillator trim, ppb -10000..+10000 (Settings > Advanced; settings_t.ref_trim_ppb)
 	UI_SET_LANGUAGE,	// the UI's language, i18n.h lang_value: "en" English, 0 never picked (Settings > Display; settings_t.lang)
+	UI_SET_CRC_CHECK,	// the DMR data service's CRC check (Settings > Connections; dmrDataSettings_t.crcCheck)
 	UI_SET_COUNT
 } ui_setting_t;
 

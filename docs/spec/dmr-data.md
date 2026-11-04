@@ -88,6 +88,16 @@ dmr_data_api.h (UI, debug link)                  sms_inbox_*, sms_send, dmr_sign
 - Replies (responses, TMS ACKs, CSBK answers) wait in a 4-entry queue; one still queued after 5 s, or not started
   within 3 s for want of a clear channel, is dropped: the sender has given up (gotcha 5.7).
 
+### 3.1 The CRC check setting (`crcCheck`, Settings > Connections > DMR CRC check)
+
+On (the default): as above; a bad CRC drops the data.
+
+Off: data with a bad CRC is accepted and marked (`dmrDataPacket_t.crcOk` false, `dmrDataMessage_t.crcOk` false; the
+UI shows "?" and "CRC error: the text may be corrupted"), so the user sees what arrived. It is never acknowledged: a
+confirmed packet with a bad CRC gets a NACK, not an ACK (the sender retries; the retry still comes through, 12.3),
+and a TMS ACK request on a bad packet is not answered. A bad CSBK is always dropped, never acted on (no call alert,
+radio check, stun/kill from one). The SFR repeater path is unchanged: it never repeats an unverified burst.
+
 ## 4. CSBK signaling
 
 Formats (10 octets before the CRC; octets 4-6 and 7-9 are 24-bit radio IDs):
@@ -238,6 +248,7 @@ that form, and it confirms delivery. Motorola TMS ("Motorola") is the format for
 | `radioCheckReply` | on | a radio check is how another user finds out whether this radio is on and in range; the answer is one short CSBK. A settings record saved before this default (no `SETTINGS_DS_CHECK_SET` in `ds_ip_cnf`, `settings-store.md` 3) answers too |
 | `callAlertAck` | on | the ack is what makes a call alert work for the caller |
 | `lrrpReply` | on | answers only a dispatcher's request; without GPS it says "no fix" |
+| `crcCheck` | on | the CRC of received data headers and packets is checked; off: data with a bad CRC is accepted and marked (the UI shows "?", "CRC error"), never acknowledged. A bad CSBK is always dropped, never acted on (3.1) |
 | `hasGps` | false | the radio core sets it false on every radio today, GPS models included (`data_init` in `core/radio/radio_sm.c`) |
 | `smsFormat` | ETSI IP text | the standard text application (5.4); ETSI short data and Motorola TMS (`CONFIG_DMR_TMS`) for radios that need them. A settings record from before this default (no format bit in `ds_flags`, `settings-store.md` 3) keeps TMS: only the default changed |
 | `radioCheckEtsi` | off | the Motorola form is what most radios answer |

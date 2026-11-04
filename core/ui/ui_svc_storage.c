@@ -284,6 +284,7 @@ int32_t ui_svc_setting_get(uint8_t id)
 #if CONFIG_DMR_DATA_CORE
 	case UI_SET_CHECK_REPLY:
 	case UI_SET_ALERT_ANSWER:
+	case UI_SET_CRC_CHECK:
 	case UI_SET_POS_REPLY:
 	case UI_SET_MSG_FORMAT: {
 		dmrDataSettings_t ds;
@@ -291,7 +292,7 @@ int32_t ui_svc_setting_get(uint8_t id)
 		if (id == UI_SET_MSG_FORMAT)
 			return ds.smsFormat;
 		return id == UI_SET_CHECK_REPLY ? ds.radioCheckReply : id == UI_SET_ALERT_ANSWER ? ds.callAlertAck :
-			ds.lrrpReply;
+			id == UI_SET_CRC_CHECK ? ds.crcCheck : ds.lrrpReply;
 	}
 #endif
 #if CONFIG_CRASH_REPORT
@@ -514,6 +515,7 @@ bool ui_svc_setting_set(uint8_t id, int32_t value)
 #if CONFIG_DMR_DATA_CORE
 	case UI_SET_CHECK_REPLY:
 	case UI_SET_ALERT_ANSWER:
+	case UI_SET_CRC_CHECK:
 	case UI_SET_POS_REPLY: {
 		dmrDataSettings_t ds;
 		dmr_data_get_settings(&ds);
@@ -521,6 +523,8 @@ bool ui_svc_setting_set(uint8_t id, int32_t value)
 			ds.radioCheckReply = value != 0;
 		else if (id == UI_SET_ALERT_ANSWER)
 			ds.callAlertAck = value != 0;
+		else if (id == UI_SET_CRC_CHECK)
+			ds.crcCheck = value != 0;
 		else
 			ds.lrrpReply = value != 0;
 		dmr_data_set_settings(&ds);	// the radio core saves the data service's settings when they change

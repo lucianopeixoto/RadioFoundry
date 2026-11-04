@@ -110,6 +110,8 @@ typedef struct
 	uint8_t  response;						// response packets: class (7-6), type (5-3), status (2-0)
 	uint8_t  dataType;						// DT of the blocks
 	bool     firstTry;						// confirmed: the header's F (full message) flag
+	bool     crcOk;							// the header and packet CRCs passed (false: accepted with the
+											// CRC check off, the data may be corrupted)
 	uint16_t length;						// user data length
 	uint8_t  data[DMR_DATA_MAX_PACKET];
 } dmrDataPacket_t;
@@ -312,6 +314,9 @@ bool dmrDataDecodeIPText(const uint8_t *payload, int length, char *text, int tex
 
 // RX
 void dmrDataRxReset(void);
+// Whether the receiver checks the CRC of data headers and packets (default on). Off: a bad CRC no longer drops the
+// data; the packet is delivered with crcOk false. Set from the data service's settings
+void dmrDataSetCrcCheck(bool on);
 dmrDataRxResult_t dmrDataRxBurst(const dmrBurst_t *burst);
 // After DMR_DATA_RX_RETRY: the selective ACK's 64 flags (1 received, 0 send again; unused ones 1)
 void dmrDataRxRetryFlags(uint8_t flags[8]);

@@ -49,6 +49,7 @@ bool ui_svc_msg_get(uint16_t i, ui_msg_t *out)
 	out->src = m.src;
 	out->group = m.group;
 	out->unread = m.unread;
+	out->crcOk = m.crcOk;
 	out->age_ms = hal_millis() - m.receivedAt;
 	contact_name(m.src, false, out->name, sizeof out->name);
 	strncpy(out->text, m.text, UI_MSG_TEXT_MAX);

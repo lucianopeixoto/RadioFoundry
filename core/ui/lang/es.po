@@ -1317,6 +1317,10 @@ msgid "From "
 msgstr "De "
 
 #: core/ui/ui_menus.c
+msgid "CRC error: the text may be corrupted"
+msgstr "Error de CRC: el texto puede estar corrupto"
+
+#: core/ui/ui_menus.c
 msgid "OK choose  # more  Back"
 msgstr "OK elegir  # más  Atrás"
 
@@ -2823,6 +2827,10 @@ msgstr "Responder radio check"
 #: core/ui/ui_menus.c
 msgid "Answer call alerts"
 msgstr "Responder alertas"
+
+#: core/ui/ui_menus.c
+msgid "DMR CRC check"
+msgstr "Comprobación CRC DMR"
 
 #: core/ui/ui_menus.c
 msgid "TFTP codeplug write"

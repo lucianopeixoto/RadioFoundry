@@ -1810,6 +1810,7 @@ static void data_save_settings(uint32_t now_ms)
 	dmrDataServiceGetSettings(&cur);
 	if (cur.arsServer == data_saved.arsServer && cur.radioCheckReply == data_saved.radioCheckReply &&
 	    cur.callAlertAck == data_saved.callAlertAck && cur.lrrpReply == data_saved.lrrpReply &&
+	    cur.crcCheck == data_saved.crcCheck &&
 	    cur.smsFormat == data_saved.smsFormat && cur.radioCheckEtsi == data_saved.radioCheckEtsi &&
 	    cur.udpCompress == data_saved.udpCompress && cur.ipConfirmed == data_saved.ipConfirmed &&
 	    cur.ipConfirmedTries == data_saved.ipConfirmedTries && cur.ipGatewayId == data_saved.ipGatewayId &&
@@ -1828,6 +1829,7 @@ static void data_save_settings(uint32_t now_ms)
 				 (cur.udpCompress == DMR_UDPC_OFF ? SETTINGS_DS_UDPC_OFF : 0) |
 				 (cur.udpCompress == DMR_UDPC_ALL ? SETTINGS_DS_UDPC_ALL : 0));
 	st->ds_ip_cnf = (uint8_t)((cur.ipConfirmedTries & 0x0F) | SETTINGS_DS_CHECK_SET |
+				  (cur.crcCheck ? 0 : SETTINGS_DS_CRC_OFF) |
 				  ((cur.ipConfirmed == DMR_IPC_OFF ? SETTINGS_DS_IPC_OFF :
 				    cur.ipConfirmed == DMR_IPC_ALL ? SETTINGS_DS_IPC_ALL : 0u) << SETTINGS_DS_IPC_SHIFT));
 	memcpy(st->ds_ip_rule, cur.ipConfirmedRule, sizeof(st->ds_ip_rule));
@@ -1923,7 +1925,7 @@ static void data_init(radio_sm_t *sm)
 	// source
 	// IP packets: compressed headers where the ports allow, confirmed only for the rules the user sets
 	dmrDataSettings_t set = { .arsServer = 0, .radioCheckReply = true, .callAlertAck = true, .lrrpReply = true,
-				  .hasGps = false, .smsFormat = DMR_SMS_FORMAT_ETSI_IP, .udpCompress = DMR_UDPC_AUTO,
+				  .crcCheck = true, .hasGps = false, .smsFormat = DMR_SMS_FORMAT_ETSI_IP, .udpCompress = DMR_UDPC_AUTO,
 				  .ipConfirmed = DMR_IPC_RULES, .ipConfirmedTries = DMR_IPC_TRIES_DEFAULT };
 	settings_t *st = &st_copy;
 	settings_read(st);
@@ -1932,6 +1934,7 @@ static void data_init(radio_sm_t *sm)
 		// A record from before the default became On answers too (as zone shares, docs/spec/dmr-data.md 8)
 		set.radioCheckReply = !(st->ds_ip_cnf & SETTINGS_DS_CHECK_SET) ||
 				      (st->ds_flags & SETTINGS_DS_RADIO_CHECK_REPLY) != 0;
+		set.crcCheck = (st->ds_ip_cnf & SETTINGS_DS_CRC_OFF) == 0;
 		set.callAlertAck = (st->ds_flags & SETTINGS_DS_CALL_ALERT_ACK) != 0;
 		set.lrrpReply = (st->ds_flags & SETTINGS_DS_LRRP_REPLY) != 0;
 		// A record from before ETSI IP text has neither format bit: TMS, as that firmware sent (only the default

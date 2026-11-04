@@ -541,6 +541,8 @@ static void msgs_item(uint16_t i, ui_item_t *it)
 		return;
 	sbuf_t b;
 	sb_init(&b, it->label, sizeof it->label);
+	if (!m.crcOk)
+		sb_str(&b, "? ");	// received with a bad CRC (the CRC check off): the text may be corrupted
 	if (m.sent)
 		sb_str(&b, GLYPH_ARROW);
 	if (m.name[0])
@@ -665,6 +667,11 @@ static const char *msg_body(void)
 	sb_str(&b, ", ");
 	sb_age_long(&b, m.age_ms);
 	sb_chr(&b, '\n');
+	if (!m.crcOk)
+	{
+		sb_str(&b, TR("CRC error: the text may be corrupted"));
+		sb_chr(&b, '\n');
+	}
 	sb_str(&b, m.text);
 	return t;
 }
@@ -4950,6 +4957,7 @@ static const set_item_t s_connections[] = {
 	TOGGLE(TRN("Hotspot allowed"), "MMDVM", UI_SET_HOTSPOT_AUTO),
 	TOGGLE(TRN("Answer radio checks"), NULL, UI_SET_CHECK_REPLY),
 	TOGGLE(TRN("Answer call alerts"), NULL, UI_SET_ALERT_ANSWER),
+	TOGGLE(TRN("DMR CRC check"), NULL, UI_SET_CRC_CHECK),
 #if CONFIG_TFTP
 	TOGGLE(TRN("TFTP codeplug write"), "network USB programming", UI_SET_TFTP_WRITE),
 #endif

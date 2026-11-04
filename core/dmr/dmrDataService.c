@@ -62,6 +62,7 @@ _Static_assert(IP_PREAMBLES + 1 + ((DMR_DATA_IP_MTU + 4 + 9) / 10) + 1 <= DMR_DA
 
 static dmrDataEnv_t env;
 static dmrDataSettings_t settings = { .radioCheckReply = true, .callAlertAck = true, .lrrpReply = true,
+										.crcCheck = true,
 										.smsFormat = DMR_SMS_FORMAT_ETSI_IP, .udpCompress = DMR_UDPC_AUTO,
 										.ipConfirmed = DMR_IPC_RULES, .ipConfirmedTries = DMR_IPC_TRIES_DEFAULT };
 static bool passthrough;				// control station: IP based packets to us belong to the PC
@@ -2115,6 +2116,12 @@ static void rxResult(dmrDataRxResult_t result, bool block)
 		return;
 	}
 	stats.rxCrcErrors++;
+	if ((result == DMR_DATA_RX_NACK) && !settings.crcCheck)
+	{
+		// With the CRC check off the bad packet still goes up, marked (handlePacket never ACKs it); the NACK
+		// below still asks the sender for another copy
+		handlePacket(p);
+	}
 	if (!isForUs(p) || p->group || !p->responseRequested)
 	{
 		return;
@@ -2146,16 +2153,18 @@ static void handlePacket(const dmrDataPacket_t *packet)
 	bool confirmed = (packet->dpf == DMR_DPF_CONFIRMED) && !packet->group;
 
 	stats.rxPackets++;
-	// Confirmed data to us must be acknowledged, whatever it carries, or the sender keeps retrying
+	// Confirmed data to us must be acknowledged, whatever it carries, or the sender keeps retrying. A packet
+	// accepted with a bad CRC (the CRC check off) is never acknowledged: the NACK for it goes out through rxResult
 	pendingReply_t reply = {
 			.queuedAt = now,
 			.dst = packet->src,
-			.response = (confirmed && packet->responseRequested) ? DMR_RESPONSE_ACK(packet->sendSeq) : 0,
+			.response = (confirmed && packet->responseRequested && packet->crcOk) ? DMR_RESPONSE_ACK(packet->sendSeq) : 0,
 			.sap = packet->sap };
 
 #if CONFIG_DMR_CONFIRMED
-	// The same packet again (our ACK was lost): ACKed again, not passed on twice
-	if (forUs && confirmed && rxDuplicate(packet->src, packet->sendSeq))
+	// The same packet again (our ACK was lost): ACKed again, not passed on twice. A packet accepted with a bad
+	// CRC was never ACKed, so it leaves the sequence number alone: the sender's retry still comes through
+	if (forUs && confirmed && packet->crcOk && rxDuplicate(packet->src, packet->sendSeq))
 	{
 		stats.rxConfirmedDuplicates++;
 		queueReplyEntry(&reply);
@@ -2304,7 +2313,7 @@ static void handlePacket(const dmrDataPacket_t *packet)
 	}
 	isTMS = isTMS && !tms.isAck;
 
-	if (isTMS && tms.ackRequested && !packet->group)
+	if (isTMS && tms.ackRequested && !packet->group && packet->crcOk)
 	{
 		reply.tms = true;
 		reply.tmsSeq = tms.seq;
@@ -2343,6 +2352,7 @@ static void handlePacket(const dmrDataPacket_t *packet)
 	message->seq = tms.seq;
 	message->receivedAt = now;
 	message->unread = true;
+	message->crcOk = packet->crcOk;
 	message->format = format;
 	memcpy(message->text, tms.text, sizeof(message->text));
 	inboxNewest = next;
@@ -2507,7 +2517,8 @@ void dmrDataServiceRxBurst(const dmrBurst_t *burst, uint32_t nowMs)
 		bool flagOk = (burst->flags & DMR_BURST_FLAG_RX_CRC_ERROR) == 0;
 
 		stats.rxCrcFlagMismatch += (ok != flagOk) ? 1 : 0;
-		if (!ok)
+		// A bad CSBK is always dropped (never acted on); a bad data header is dropped only with the CRC check on
+		if (!ok && ((burst->dataType == DT_CSBK) || settings.crcCheck))
 		{
 			stats.rxCrcErrors++;
 			return;
@@ -2569,6 +2580,7 @@ void dmrDataServiceSetSettings(const dmrDataSettings_t *s)
 {
 	settings = *s;
 	dmrDataSetUdpCompression(settings.udpCompress);
+	dmrDataSetCrcCheck(settings.crcCheck);
 }
 
 void dmrDataServiceGetSettings(dmrDataSettings_t *s)

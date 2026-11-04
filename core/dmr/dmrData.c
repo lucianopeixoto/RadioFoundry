@@ -29,6 +29,13 @@ DMR_DATA_BUFFER static uint8_t txPacket[DMR_DATA_MAX_PACKET];
 static bool    rxCollecting = false;
 static uint8_t rxBlocksReceived;
 static uint16_t rxBytes;
+// Whether the receiver checks the CRC of data headers and packets (the data service's crcCheck setting)
+static bool    rxCrcCheck = true;
+
+void dmrDataSetCrcCheck(bool on)
+{
+	rxCrcCheck = on;
+}
 
 static void putId(uint8_t *p, uint32_t id)
 {
@@ -1259,6 +1266,7 @@ static dmrDataRxResult_t confirmedFinish(dmrDataPacket_t *p)
 		if (cnf.good == cnfAll())
 		{
 			cnf.held = false;
+			p->crcOk = false;	// the CRC-32 failed; the service delivers it marked when the check is off
 			return DMR_DATA_RX_NACK;
 		}
 	}
@@ -1445,7 +1453,9 @@ dmrDataRxResult_t dmrDataRxBurst(const dmrBurst_t *burst)
 			}
 
 			rxCollecting = false;
-			if (!checkCRC16(burst->payload, 0xCC) || !parseHeader(burst->payload, p))
+			bool headerOk = checkCRC16(burst->payload, 0xCC);
+			p->crcOk = headerOk;
+			if ((!headerOk && rxCrcCheck) || !parseHeader(burst->payload, p))
 			{
 				return DMR_DATA_RX_ERROR;
 			}
@@ -1523,7 +1533,11 @@ dmrDataRxResult_t dmrDataRxBurst(const dmrBurst_t *burst)
 
 				if (dmrDataCRC32(p->data, rxBytes - 4) != rxCrc)
 				{
-					return DMR_DATA_RX_ERROR;
+					if (rxCrcCheck)
+					{
+						return DMR_DATA_RX_ERROR;
+					}
+					p->crcOk = false;	// accepted with the CRC check off: the data may be corrupted
 				}
 
 				p->length = rxBytes - 4 - p->padOctets;
